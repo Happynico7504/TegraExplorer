@@ -25,6 +25,7 @@
 #include <storage/mbr_gpt.h>
 #include <utils/list.h>
 
+bool is_sd_inited = true;
 bool sd_mounted = false;
 static u16  sd_errors[3] = { 0 }; // Init and Read/Write errors.
 static u32  sd_mode = SD_UHS_SDR82;
@@ -32,6 +33,10 @@ static u32  sd_mode = SD_UHS_SDR82;
 sdmmc_t emmc_sdmmc;
 sdmmc_storage_t emmc_storage;
 FATFS emmc_fs;
+
+sdmmc_t sd_sdmmc;
+sdmmc_storage_t sd_storage;
+FATFS sd_fs;
 
 void nx_emmc_gpt_parse(link_t *gpt, sdmmc_storage_t *storage)
 {
@@ -206,4 +211,13 @@ bool sd_get_card_removed()
 u32 sd_get_mode()
 {
 	return sd_mode;
+}
+
+int sd_init_retry(bool power_cycle)
+{
+	return true;
+}
+bool sd_initialize(bool power_cycle)
+{
+	return true;
 }
