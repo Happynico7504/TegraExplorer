@@ -95,7 +95,7 @@ int sd_init_retry(bool power_cycle)
 		sd_mode = SD_UHS_SDR82;
 	}
 
-	return sdmmc_storage_init_sd(&sd_storage, &sd_sdmmc, bus_width, type);
+	return sdmmc_storage_init_mmc(&sd_storage, &sd_sdmmc, bus_width, type);
 }
 
 bool sd_initialize(bool power_cycle)
