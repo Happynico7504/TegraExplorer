@@ -22,6 +22,9 @@
 #include <storage/mbr_gpt.h>
 #include <utils/list.h>
 
+static u16  sd_errors[3] = { 0 }; // Init and Read/Write errors.
+static u32  sd_mode = SD_UHS_SDR82;
+
 sdmmc_t emmc_sdmmc;
 sdmmc_storage_t emmc_storage;
 FATFS emmc_fs;
@@ -83,4 +86,118 @@ int nx_emmc_part_write(sdmmc_storage_t *storage, emmc_part_t *part, u32 sector_o
 	if (part->lba_start + sector_off > part->lba_end)
 		return 0;
 	return emummc_storage_write(storage, part->lba_start + sector_off, num_sectors, buf);
+}
+
+bool sd_mount()
+{
+	if (sd_mounted)
+		return true;
+
+	if (res)
+	{
+		gfx_con.mute = false;
+		EPRINTF("Failed to init SD card.");
+	}
+	else
+	{
+		res = f_mount(&emmc_fs, "", 1);
+		if (res == FR_OK)
+		{
+			sd_mounted = true;
+			return true;
+		}
+		else
+		{
+			gfx_con.mute = false;
+			EPRINTFARGS("Failed to mount eMMC (FatFS Error %d).\nMake sure that a FAT partition exists..", res);
+		}
+	}
+
+	return false;
+}
+
+static void _sd_deinit()
+{
+	if (sd_mounted)
+	{
+		f_mount(NULL, "", 1);
+		sd_mounted = false;
+	}
+}
+
+void sd_unmount() { _sd_deinit(); }
+void sd_end()     { _sd_deinit(); }
+
+void *sd_file_read(const char *path, u32 *fsize)
+{
+	FIL fp;
+	if (f_open(&fp, path, FA_READ) != FR_OK)
+		return NULL;
+
+	u32 size = f_size(&fp);
+	if (fsize)
+		*fsize = size;
+
+	char *buf = malloc(size + 1);
+	buf[size] = '\0';
+
+	if (f_read(&fp, buf, size, NULL) != FR_OK)
+	{
+		free(buf);
+		f_close(&fp);
+
+		return NULL;
+	}
+
+	f_close(&fp);
+
+	return buf;
+}
+
+int sd_save_to_file(void *buf, u32 size, const char *filename)
+{
+	FIL fp;
+	u32 res = 0;
+	res = f_open(&fp, filename, FA_CREATE_ALWAYS | FA_WRITE);
+	if (res)
+	{
+		EPRINTFARGS("Error (%d) creating file\n%s.\n", res, filename);
+		return res;
+	}
+
+	f_write(&fp, buf, size, NULL);
+	f_close(&fp);
+
+	return 0;
+}
+
+void sd_error_count_increment(u8 type)
+{
+	switch (type)
+	{
+	case SD_ERROR_INIT_FAIL:
+		sd_errors[0]++;
+		break;
+	case SD_ERROR_RW_FAIL:
+		sd_errors[1]++;
+		break;
+	case SD_ERROR_RW_RETRY:
+		sd_errors[2]++;
+		break;
+	}
+}
+
+u16 *sd_get_error_count()
+{
+	return sd_errors;
+}
+
+bool sd_get_card_removed()
+{
+	return false;
+}
+
+u32 sd_get_mode()
+{
+	return sd_mode;
 }
