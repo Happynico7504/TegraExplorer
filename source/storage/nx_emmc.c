@@ -17,6 +17,8 @@
 #include <string.h>
 
 #include "nx_emmc.h"
+#include <storage/nx_sd.h>
+#include <libs/fatfs/ff.h>
 #include "emummc.h"
 #include <mem/heap.h>
 #include <storage/mbr_gpt.h>
