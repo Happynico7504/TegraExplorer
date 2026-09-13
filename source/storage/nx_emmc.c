@@ -24,6 +24,7 @@
 #include <storage/mbr_gpt.h>
 #include <utils/list.h>
 
+bool sd_mounted = false;
 static u16  sd_errors[3] = { 0 }; // Init and Read/Write errors.
 static u32  sd_mode = SD_UHS_SDR82;
 
